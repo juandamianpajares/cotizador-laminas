@@ -6,15 +6,19 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install dependencies needed for Prisma
-RUN apk add --no-cache libc6-compat openssl
+# Install dependencies needed for Prisma and build tools
+RUN apk add --no-cache libc6-compat openssl python3 make g++
 
 # Copy package files
 COPY package.json package-lock.json* ./
-COPY prisma ./prisma/
 
-# Install dependencies
-RUN npm ci --legacy-peer-deps
+# Install dependencies with retries
+RUN npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retry-mintimeout 10000 && \
+    npm install --legacy-peer-deps || npm install --legacy-peer-deps
+
+# Copy prisma schema
+COPY prisma ./prisma/
 
 # Generate Prisma Client
 RUN npx prisma generate

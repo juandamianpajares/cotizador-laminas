@@ -259,6 +259,20 @@ net stop MySQL80           # Windows
 APP_PORT=3001
 ```
 
+### Problema: npm ci failed durante el build
+
+```bash
+# Limpiar todo y rebuild desde cero
+docker-compose down
+docker system prune -a --volumes
+docker-compose build --no-cache
+docker-compose up -d
+
+# Si persiste, eliminar node_modules local
+rm -rf node_modules
+docker-compose build --no-cache
+```
+
 ### Problema: La app no se conecta a la BD
 
 ```bash

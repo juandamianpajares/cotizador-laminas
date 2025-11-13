@@ -212,7 +212,9 @@ docker-compose exec db mysql -u juan -p cotizador_laminas
 ## 📚 Documentación
 
 - [DOCKER.md](DOCKER.md) - Guía completa de Docker
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Solución de problemas comunes
 - [ARQUITECTURA.md](ARQUITECTURA.md) - Diagramas de arquitectura
+- [DEPLOYMENT-DEBIAN.md](DEPLOYMENT-DEBIAN.md) - Deployment en servidor
 - [FLUJOS-IMPLEMENTADOS.md](FLUJOS-IMPLEMENTADOS.md) - Flujos de usuario
 
 ---
