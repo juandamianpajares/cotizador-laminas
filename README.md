@@ -1,716 +1,381 @@
-# Sistema de Cotización de Láminas para Vidrios
+# 🚗 Cotizador de Láminas para Vehículos
 
-## Plataforma Multi-Vertical: Automotriz, Residencial, Comercial y Arquitectónico
-
-[![Next.js](https://img.shields.io/badge/Next.js-15.1.5-black)](https://nextjs.org/)
-[![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)](https://www.typescriptlang.org/)
-[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748)](https://www.prisma.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Sistema completo de cotización de láminas de seguridad y polarizadas para vehículos, con gestión de solicitudes de clientes y envío automatizado por WhatsApp.
 
 ---
 
-## 📋 Tabla de Contenidos
+## 📋 Características
 
-- [Visión del Proyecto](#visión-del-proyecto)
-- [Estado Actual (Sprints 1-7)](#estado-actual-sprints-1-7)
-- [Roadmap 2025 (Sprints 8-13)](#roadmap-2025-sprints-8-13)
-- [Arquitectura](#arquitectura)
-- [Tecnologías](#tecnologías)
-- [Instalación](#instalación)
-- [Uso](#uso)
-- [Testing](#testing)
-- [Contribuir](#contribuir)
+### Flujo del Cliente
+- ✅ Formulario simplificado (solo teléfono + fotos)
+- ✅ Upload de 1-3 fotos del vehículo
+- ✅ Selección opcional de tipo de servicio
+- ✅ Confirmación inmediata de solicitud
 
----
+### Flujo del Encargado
+- ✅ Panel de solicitudes con filtros y búsqueda
+- ✅ Revisión de fotos del cliente
+- ✅ Configuración completa de vehículo y vidrios
+- ✅ Cálculo automático de precios por tipo de vehículo
+- ✅ Envío de cotización formateada por WhatsApp
 
-## 🎯 Visión General
-
-Sistema empresarial completo de cotización de films y laminados para vidrios, diseñado para cubrir múltiples verticales de negocio:
-
-### Verticales Cubiertas
-
-#### 🚗 Automotriz
-- Laminado de seguridad para vehículos
-- Control solar (rejection de calor)
-- Vidrios planos y curvos
-- Decodificación VIN automática
-
-#### 🏠 Residencial
-- Ventanas de hogares y departamentos
-- Puertas de vidrio (corredizas, abatibles)
-- Mamparas de baño
-- Films decorativos y de privacidad
-
-#### 🏢 Comercial
-- Fachadas de edificios corporativos
-- Divisiones de oficinas
-- Salas de reuniones
-- Control solar y eficiencia energética
-
-#### 🎨 Arquitectónico/Decorativo
-- Franjas horizontales/verticales
-- Vinilos con logos corporativos
-- Diseños personalizados
-- Efectos especiales (degradados, patterns)
-
-### Tipos de Films Incluidos
-
-| Categoría | Productos | Aplicaciones |
-|-----------|-----------|--------------|
-| **Laminado de Seguridad** | Clear 4mil, 8mil, 12mil | Protección anti-impacto, retención de fragmentos |
-| **Control Solar** | Ceramic 70%, 50%, Charcoal 5%, Bronze 20% | Rechazo de calor, ahorro energético |
-| **Vinílico Decorativo** | Esmerilado, Colores, Franjas, Custom | Privacidad, decoración, corporativo |
-| **Privacidad** | One-Way Mirror, Blackout, Gradual | Control visual y de luz |
+### Características Técnicas
+- ✅ Next.js 15 con App Router
+- ✅ React 19 + TypeScript
+- ✅ Prisma ORM + MySQL 8.0
+- ✅ Docker Compose para desarrollo y producción
+- ✅ Segmentación de clientes (nuevo, leal, mayorista, corporativo)
+- ✅ Precios dinámicos por tipo de vehículo
+- ✅ Sistema de plantillas de vidrios
 
 ---
 
-## ✨ Características Principales
+## 🐳 Inicio Rápido con Docker (RECOMENDADO)
 
-### 🎨 Formulario Web Interactivo
-- **Selección por habitación**: Interfaz paso a paso para agregar habitaciones y sus aberturas
-- **Multi-vertical**: Soporte para automotriz, residencial, comercial
-- **Configuración detallada**: Dimensiones, tipos de film, especificaciones técnicas
-- **Preview en tiempo real**: Cálculo de áreas y costos instantáneo
+### Prerequisitos
+- [Docker](https://docs.docker.com/get-docker/) 20.10+
+- [Docker Compose](https://docs.docker.com/compose/install/) 2.0+
 
-### 🧮 Motor de Cálculo Avanzado
-- **Cálculo de desperdicios**: Matriz inteligente según tipo de abertura y film
-- **Factor de complejidad**: Ajuste por altura, acceso, condiciones especiales
-- **Descuentos por volumen**: Escala automática según m² totales
-- **Precios dinámicos**: Ajustes estacionales y por lealtad
+### Opción 1: Script Automático
 
-### 📱 Integración WhatsApp
-- **Cotizaciones conversacionales**: Bot inteligente para WhatsApp Business
-- **Envío automático de PDFs**: Generación y envío de documentos
-- **Seguimiento de conversaciones**: Historial completo de interacciones
-
-### 🔐 Seguridad Enterprise
-- JWT Authentication con RS256
-- Rate limiting avanzado
-- Input validation con Pydantic v2
-- SQL injection prevention
-- Encryption at rest y in transit
-- Audit logging completo
-- OWASP Top 10 compliance
-
-### 📊 Panel de Administración
-- Gestión de catálogo de productos
-- Control de precios dinámicos
-- Reportes y analytics
-- Gestión de clientes y cotizaciones
-
----
-
-## 🏗️ Arquitectura
-
-### Diagrama de Componentes
-
-```
-┌─────────────────────────────────────────────────────┐
-│                    FRONTEND                         │
-│  React 18 + TypeScript + Tailwind CSS              │
-│  - Formulario multi-paso                           │
-│  - Gestión de estado con React Query                │
-│  - Validación con Zod                               │
-└─────────────────────────────────────────────────────┘
-                         ↓ HTTPS
-┌─────────────────────────────────────────────────────┐
-│                 API GATEWAY                         │
-│  - Rate Limiting                                    │
-│  - JWT Authentication                               │
-│  - Request Validation                               │
-└─────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────┐
-│                BACKEND SERVICES                     │
-│  FastAPI + Python 3.11+                            │
-│  ├── Motor de Cálculo                              │
-│  ├── Servicio de Catálogo                          │
-│  ├── WhatsApp Service                              │
-│  ├── VIN Decoder                                    │
-│  └── Servicio de Notificaciones                    │
-└─────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────┐
-│              DATA LAYER                             │
-│  ├── PostgreSQL 15 (Primary + Replica)            │
-│  ├── Redis 7 (Cache + Sessions)                    │
-│  └── Cloud Storage (S3/MinIO)                      │
-└─────────────────────────────────────────────────────┘
+**Linux/macOS:**
+```bash
+chmod +x docker/scripts/start.sh
+./docker/scripts/start.sh
 ```
 
-### Modelo de Datos Simplificado
-
-```
-Customer
-  ├── Quotations
-  │   ├── QuotationItems
-  │   │   └── Product
-  │   ├── Property (Residential/Commercial)
-  │   │   └── Rooms
-  │   │       └── Openings
-  │   └── Vehicle (Automotive)
-  │
-  └── WhatsAppConversations
-      └── WhatsAppMessages
+**Windows:**
+```cmd
+docker\scripts\start.bat
 ```
 
----
-
-## 🛠️ Tecnologías
-
-### Backend
-- **Framework**: FastAPI 0.104+
-- **Language**: Python 3.11+
-- **ORM**: SQLAlchemy 2.0
-- **Validation**: Pydantic v2
-- **Database**: PostgreSQL 15+
-- **Cache**: Redis 7+
-- **Task Queue**: Celery
-- **Testing**: pytest
-
-### Frontend
-- **Framework**: React 18
-- **Language**: TypeScript 5+
-- **State Management**: React Query (TanStack Query)
-- **Forms**: React Hook Form + Zod
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Build Tool**: Vite
-
-### Infrastructure
-- **Containerization**: Docker + Docker Compose
-- **Orchestration**: Kubernetes
-- **Cloud**: Google Cloud Platform
-  - Cloud Run (Backend)
-  - Cloud SQL (PostgreSQL)
-  - Memorystore (Redis)
-  - Cloud Storage (Files)
-- **Monitoring**: Prometheus + Grafana
-- **Error Tracking**: Sentry
-- **CI/CD**: GitHub Actions
-
----
-
-## 🚀 Instalación
-
-### Prerrequisitos
+### Opción 2: Manual
 
 ```bash
-- Docker 20+
-- Docker Compose 2+
-- Node.js 18+
-- Python 3.11+
-- PostgreSQL 15+ (para desarrollo local)
-- Redis 7+ (para desarrollo local)
-```
+# 1. Clonar repositorio
+git clone https://github.com/tu-usuario/cotizador-laminas.git
+cd cotizador-laminas
 
-### Instalación Rápida con Docker
-
-1. **Clonar el repositorio**
-```bash
-git clone https://github.com/tu-org/films-quotation-system.git
-cd films-quotation-system
-```
-
-2. **Configurar variables de entorno**
-```bash
+# 2. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus configuraciones
+
+# 3. Iniciar todos los servicios
+docker-compose up -d --build
+
+# 4. Ver logs
+docker-compose logs -f app
 ```
 
-3. **Iniciar servicios**
-```bash
-docker-compose up -d
-```
+### Acceder a la Aplicación
 
-4. **Ejecutar migraciones**
-```bash
-docker-compose exec api alembic upgrade head
-```
+- **App Web**: http://localhost:3000
+- **phpMyAdmin**: http://localhost:8080
+- **Health Check**: http://localhost:3000/api/health
 
-5. **Cargar datos iniciales**
-```bash
-docker-compose exec api python scripts/load_initial_data.py
-```
+---
 
-6. **Acceder a la aplicación**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
+## 💻 Desarrollo Local (sin Docker)
 
-### Instalación para Desarrollo
+### Prerequisitos
+- Node.js 20+
+- MySQL 8.0
+- npm o yarn
 
-#### Backend
+### Instalación
 
 ```bash
-cd backend
-
-# Crear entorno virtual
-python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
-
-# Instalar dependencias
-pip install -r requirements.txt
-pip install -r requirements-dev.txt
-
-# Configurar base de datos
-createdb films_quotation_db
-
-# Ejecutar migraciones
-alembic upgrade head
-
-# Iniciar servidor de desarrollo
-uvicorn app.main:app --reload --port 8000
-```
-
-#### Frontend
-
-```bash
-cd frontend
-
-# Instalar dependencias
+# 1. Instalar dependencias
 npm install
 
-# Iniciar servidor de desarrollo
+# 2. Configurar .env
+cp .env.example .env
+# Editar DATABASE_URL para apuntar a tu MySQL local
+
+# 3. Ejecutar migraciones
+npx prisma migrate dev
+
+# 4. Generar Prisma Client
+npx prisma generate
+
+# 5. Iniciar servidor de desarrollo
 npm run dev
 ```
 
 ---
 
-## 📖 Uso
+## 📁 Estructura del Proyecto
 
-### Crear Cotización Residencial
-
-#### Paso 1: Seleccionar Vertical
-```typescript
-// Usuario selecciona "Residencial"
-vertical = "residential"
 ```
-
-#### Paso 2: Información del Cliente
-```typescript
-customer = {
-  name: "Juan Pérez",
-  email: "juan@ejemplo.com",
-  phone: "+54 11 1234-5678",
-  whatsapp: "+54 11 1234-5678"
-}
-```
-
-#### Paso 3: Información de la Propiedad
-```typescript
-property = {
-  type: "house",  // Casa
-  address: "Av. Corrientes 1234",
-  city: "Buenos Aires",
-  floors: 2
-}
-```
-
-#### Paso 4: Agregar Habitaciones y Aberturas
-```typescript
-rooms = [
-  {
-    name: "Sala Principal",
-    type: "living_room",
-    floor: 1,
-    openings: [
-      {
-        type: "window",
-        width: 2.0,  // metros
-        height: 1.5,
-        quantity: 2,
-        productType: "solar_control",
-        specifications: {
-          glassType: "tempered",
-          floor: 1
-        }
-      },
-      {
-        type: "sliding_door",
-        width: 2.5,
-        height: 2.2,
-        quantity: 1,
-        productType: "vinyl_decorative",
-        specifications: {
-          glassType: "tempered"
-        }
-      }
-    ]
-  },
-  {
-    name: "Dormitorio Principal",
-    type: "bedroom",
-    floor: 2,
-    openings: [
-      {
-        type: "window",
-        width: 1.5,
-        height: 1.2,
-        quantity: 2,
-        productType: "privacy",
-        specifications: {
-          floor: 2
-        }
-      }
-    ]
-  }
-]
-```
-
-#### Paso 5: Revisar Cotización
-```json
-{
-  "quotation_id": "abc123",
-  "customer": { "name": "Juan Pérez", ... },
-  "items_count": 3,
-  "total_area": "15.80 m²",
-  "pricing": {
-    "material": "$1,420.00",
-    "installation": "$380.00",
-    "subtotal": "$1,800.00",
-    "discount": {
-      "percentage": 0,
-      "amount": "$0.00"
-    },
-    "tax": "$378.00",
-    "total": "$2,178.00"
-  }
-}
-```
-
-### API Usage Example
-
-```python
-import requests
-
-# Calcular cotización
-response = requests.post(
-    "http://localhost:8000/api/v1/quotations/residential",
-    json={
-        "customer": {
-            "name": "Juan Pérez",
-            "email": "juan@ejemplo.com",
-            "phone": "+54 11 1234-5678"
-        },
-        "property": {
-            "type": "house",
-            "address": "Av. Corrientes 1234"
-        },
-        "rooms": [
-            {
-                "name": "Sala Principal",
-                "type": "living_room",
-                "floor": 1,
-                "openings": [
-                    {
-                        "type": "window",
-                        "width": 2.0,
-                        "height": 1.5,
-                        "quantity": 2,
-                        "product_id": "prod-abc123"
-                    }
-                ]
-            }
-        ]
-    },
-    headers={"Authorization": "Bearer YOUR_JWT_TOKEN"}
-)
-
-quotation = response.json()
-print(f"Total: ${quotation['total']}")
+cotizador-laminas/
+├── app/
+│   ├── cotizar/
+│   │   ├── cliente/            # Formulario cliente simplificado
+│   │   └── vehiculos/          # Formulario encargado completo
+│   ├── encargado/
+│   │   ├── solicitudes/        # Panel de solicitudes
+│   │   └── cotizaciones/
+│   │       └── nueva/          # Revisión de solicitud
+│   └── api/
+│       ├── solicitudes/        # API de solicitudes
+│       ├── whatsapp/           # API WhatsApp
+│       └── health/             # Health check
+├── prisma/
+│   ├── schema.prisma           # Modelo de datos
+│   └── migrations/             # Migraciones
+├── docker/
+│   ├── mysql/                  # Configuración MySQL
+│   └── scripts/                # Scripts de ayuda
+├── lib/
+│   ├── prisma.ts               # Cliente Prisma
+│   └── vehicleImages.ts        # Imágenes de vehículos
+├── Dockerfile                  # Producción
+├── Dockerfile.dev              # Desarrollo
+├── docker-compose.yml          # Producción
+├── docker-compose.dev.yml      # Desarrollo con hot-reload
+└── DOCKER.md                   # Documentación Docker
 ```
 
 ---
 
-## 📚 API Documentation
+## 🗄️ Base de Datos
 
-### Endpoints Principales
+### Modelos Principales
 
-#### Cotizaciones
+- **Customer**: Clientes
+- **Quotation**: Cotizaciones completas
+- **QuotationItem**: Items de cotización
+- **QuotationRequest**: Solicitudes de clientes (incompletas)
+- **Product**: Catálogo de láminas
+- **PricingConfig**: Configuración de precios por tipo de vehículo
 
-```http
-POST   /api/v1/quotations/residential
-POST   /api/v1/quotations/commercial
-POST   /api/v1/quotations/automotive
-GET    /api/v1/quotations/{id}
-PUT    /api/v1/quotations/{id}
-DELETE /api/v1/quotations/{id}
-POST   /api/v1/quotations/{id}/confirm
-POST   /api/v1/quotations/{id}/send-whatsapp
-GET    /api/v1/quotations/{id}/pdf
+### Migraciones
+
+```bash
+# Con Docker
+docker-compose exec app npx prisma migrate deploy
+
+# Sin Docker
+npx prisma migrate dev
+npx prisma migrate deploy  # Producción
 ```
 
-#### Productos
+### Prisma Studio
 
-```http
-GET    /api/v1/products
-GET    /api/v1/products/{id}
-POST   /api/v1/products (admin)
-PUT    /api/v1/products/{id} (admin)
-DELETE /api/v1/products/{id} (admin)
-GET    /api/v1/products/categories
-GET    /api/v1/products/by-vertical/{vertical}
+```bash
+# Con Docker
+docker-compose exec app npx prisma studio
+
+# Sin Docker
+npx prisma studio
 ```
 
-#### Propiedades
+---
 
-```http
-POST   /api/v1/properties
-GET    /api/v1/properties/{id}
-POST   /api/v1/properties/{id}/rooms
-POST   /api/v1/rooms/{id}/openings
+## 🔧 Comandos Útiles
+
+### Docker
+
+```bash
+# Ver logs
+docker-compose logs -f app
+docker-compose logs -f db
+
+# Reiniciar servicios
+docker-compose restart app
+
+# Detener servicios
+docker-compose down
+
+# Detener y eliminar volúmenes (CUIDADO)
+docker-compose down -v
+
+# Rebuild completo
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
-### Documentación Interactiva
+### Base de Datos
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+```bash
+# Backup
+docker-compose exec db mysqldump -u root -p cotizador_laminas > backup.sql
+
+# Restore
+docker-compose exec -T db mysql -u root -p cotizador_laminas < backup.sql
+
+# MySQL CLI
+docker-compose exec db mysql -u juan -p cotizador_laminas
+```
+
+---
+
+## 📚 Documentación
+
+- [DOCKER.md](DOCKER.md) - Guía completa de Docker
+- [ARQUITECTURA.md](ARQUITECTURA.md) - Diagramas de arquitectura
+- [FLUJOS-IMPLEMENTADOS.md](FLUJOS-IMPLEMENTADOS.md) - Flujos de usuario
+
+---
+
+## 🚀 Deployment en Debian
+
+### 1. Instalar Docker en Debian
+
+```bash
+# Actualizar sistema
+sudo apt update && sudo apt upgrade -y
+
+# Instalar dependencias
+sudo apt install -y apt-transport-https ca-certificates curl gnupg lsb-release
+
+# Agregar repo de Docker
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Instalar Docker
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+
+# Verificar instalación
+docker --version
+docker compose version
+```
+
+### 2. Clonar y Configurar
+
+```bash
+# Clonar repositorio
+git clone https://github.com/tu-usuario/cotizador-laminas.git
+cd cotizador-laminas
+
+# Configurar .env para producción
+cp .env.example .env
+nano .env  # Cambiar contraseñas y configuración
+
+# Generar JWT secret seguro
+openssl rand -base64 32
+```
+
+### 3. Iniciar Servicios
+
+```bash
+# Iniciar en producción
+docker compose up -d --build
+
+# Ver logs
+docker compose logs -f
+
+# Verificar estado
+docker compose ps
+```
+
+### 4. Configurar Nginx (Opcional)
+
+```bash
+# Instalar Nginx
+sudo apt install -y nginx
+
+# Configurar reverse proxy
+sudo nano /etc/nginx/sites-available/cotizador
+```
+
+Agregar configuración:
+
+```nginx
+server {
+    listen 80;
+    server_name tu-dominio.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+```bash
+# Activar sitio
+sudo ln -s /etc/nginx/sites-available/cotizador /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+### 5. SSL con Let's Encrypt (Opcional)
+
+```bash
+# Instalar Certbot
+sudo apt install -y certbot python3-certbot-nginx
+
+# Obtener certificado
+sudo certbot --nginx -d tu-dominio.com
+
+# Auto-renovación
+sudo systemctl enable certbot.timer
+```
 
 ---
 
 ## 🔐 Seguridad
 
-### Autenticación
-
-```python
-# JWT Token Structure
-{
-  "sub": "user_id",
-  "email": "user@example.com",
-  "role": "admin|user",
-  "permissions": ["quotations:read", "quotations:create"],
-  "exp": 1234567890
-}
-```
-
-### Headers de Seguridad
-
-```nginx
-Strict-Transport-Security: max-age=31536000; includeSubDomains
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-X-XSS-Protection: 1; mode=block
-Content-Security-Policy: default-src 'self'
-```
-
-### Rate Limiting
-
-```python
-# Por IP
-- 100 requests/minuto (general)
-- 10 requests/minuto (cotizaciones)
-
-# Por usuario autenticado
-- 1000 requests/minuto
-```
-
-### Checklist de Seguridad
-
-- ✅ HTTPS obligatorio
-- ✅ JWT con RS256
-- ✅ Rate limiting por endpoint
-- ✅ Input validation (Pydantic)
-- ✅ SQL injection prevention
-- ✅ XSS prevention
-- ✅ CORS configurado
-- ✅ Secrets en variables de entorno
-- ✅ Encryption at rest (PostgreSQL TDE)
-- ✅ Encryption in transit (TLS 1.3)
-- ✅ Audit logging
-- ✅ Dependency scanning
-- ✅ Docker security scanning
-
----
-
-## 🚀 Deployment
-
-### Docker Compose (Producción Simplificada)
-
-```yaml
-version: '3.8'
-
-services:
-  api:
-    image: gcr.io/your-project/films-api:latest
-    environment:
-      - DATABASE_URL=postgresql://user:pass@postgres:5432/films_db
-      - REDIS_URL=redis://redis:6379/0
-    deploy:
-      replicas: 3
-      resources:
-        limits:
-          cpus: '1'
-          memory: 1G
-  
-  frontend:
-    image: gcr.io/your-project/films-frontend:latest
-    ports:
-      - "80:80"
-      - "443:443"
-```
-
-### Kubernetes (Producción Enterprise)
-
-```bash
-# Deploy a Kubernetes
-kubectl apply -f k8s/
-
-# Escalar servicios
-kubectl scale deployment films-api --replicas=5
-
-# Ver logs
-kubectl logs -f deployment/films-api
-```
-
-### Google Cloud Platform
-
-```bash
-# Deploy backend a Cloud Run
-gcloud run deploy films-api \
-  --image gcr.io/your-project/films-api:latest \
-  --platform managed \
-  --region us-central1 \
-  --allow-unauthenticated
-
-# Deploy frontend a Cloud Storage + CDN
-gsutil -m rsync -r frontend/dist gs://films-frontend
-gcloud compute url-maps invalidate-cdn-cache films-cdn --path "/*"
-```
-
----
-
-## 🧪 Testing
-
-### Ejecutar Tests
-
-```bash
-# Backend
-cd backend
-pytest tests/ -v --cov=app --cov-report=html
-
-# Frontend
-cd frontend
-npm test
-npm run test:coverage
-```
-
-### Cobertura Requerida
-
-- Unit Tests: 80% mínimo
-- Integration Tests: Flujos críticos
-- E2E Tests: User journeys principales
-- Load Tests: 1000 req/s
-
-### Load Testing
-
-```bash
-# Usando Locust
-cd backend/tests/load
-locust -f locustfile.py --host=http://localhost:8000
-```
-
----
-
-## 📊 Monitoreo
-
-### Métricas Clave
-
-```python
-# Prometheus Metrics
-- quotation_requests_total
-- quotation_calculation_duration_seconds
-- active_users
-- database_connections
-- api_response_time_seconds
-```
-
-### Dashboards
-
-- **Grafana**: http://localhost:3001
-  - Dashboard de Performance
-  - Dashboard de Negocio
-  - Dashboard de Errores
-
-### Health Checks
-
-```bash
-# Health endpoint
-curl http://localhost:8000/health
-
-# Readiness endpoint
-curl http://localhost:8000/ready
-```
+- ✅ Variables de entorno para credenciales
+- ✅ MySQL no expuesta directamente (solo dentro de Docker network)
+- ✅ Health checks configurados
+- ✅ Volúmenes persistentes para datos
+- ⚠️ Cambiar contraseñas por defecto en producción
+- ⚠️ Configurar HTTPS en producción
+- ⚠️ Configurar firewall (ufw/iptables)
 
 ---
 
 ## 🤝 Contribuir
 
 1. Fork el proyecto
-2. Crear branch de feature (`git checkout -b feature/AmazingFeature`)
-3. Commit cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push al branch (`git push origin feature/AmazingFeature`)
+2. Crear rama de feature (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
 5. Abrir Pull Request
 
-### Estándares de Código
+---
 
-- **Python**: PEP 8, type hints obligatorios
-- **TypeScript**: ESLint + Prettier
-- **Tests**: Cobertura mínima 80%
-- **Documentación**: Docstrings en todas las funciones públicas
+## 📝 Roadmap
+
+- [x] Sprint 1-7: Sistema base de cotización
+- [x] Sprint 7.5: Flujos cliente/encargado + WhatsApp
+- [x] Containerización con Docker
+- [ ] Sprint 8: API de imágenes de vehículos
+- [ ] Sprint 10/11: Integración con Cloudinary
+- [ ] Sprint 12: Notificaciones en tiempo real
+- [ ] WhatsApp Business API integration
+- [ ] Autenticación y roles de usuario
+- [ ] Panel de administración
+- [ ] Reportes y estadísticas
 
 ---
 
-## 📝 Licencia
+## 📄 Licencia
 
-MIT License - ver [LICENSE](LICENSE) para más detalles
-
----
-
-## 👥 Autores
-
-- **Tu Nombre** - *Initial work*
+Este proyecto es privado. Todos los derechos reservados.
 
 ---
 
-## 🙏 Agradecimientos
+## 👨‍💻 Autor
 
-- FastAPI por el excelente framework
-- React team por React 18
-- Anthropic por Claude AI
+**Juan Damián Pajares**
 
 ---
 
 ## 📞 Soporte
 
-- **Email**: soporte@tuempresa.com
-- **WhatsApp**: +54 11 1234-5678
-- **Documentación**: https://docs.tuempresa.com
-- **Issues**: https://github.com/tu-org/films-quotation-system/issues
+Para problemas o preguntas:
+- Crear un issue en GitHub
+- Contactar al equipo de desarrollo
 
 ---
 
-## 🗺️ Roadmap
-
-### Q1 2025
-- ✅ MVP Core (Residencial + Comercial)
-- ✅ Formulario web interactivo
-- ✅ Motor de cálculo avanzado
-- ⏳ Integración WhatsApp
-
-### Q2 2025
-- ⏳ Panel de administración completo
-- ⏳ Vertical automotriz
-- ⏳ Sistema de reportes
-- ⏳ Mobile app (React Native)
-
-### Q3 2025
-- ⏳ Integración con CRMs
-- ⏳ Analytics avanzado
-- ⏳ Cotizaciones colaborativas
-- ⏳ API pública para partners
-
----
-
-**¡Gracias por usar nuestro sistema! 🚀**
+**Última actualización**: Enero 2025
+**Versión**: Sprint 7.5 + Docker

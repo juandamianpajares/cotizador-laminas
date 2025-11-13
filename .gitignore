@@ -48,3 +48,14 @@ ENV/
 
 # Prisma
 prisma/migrations/
+
+# Docker
+docker-compose.override.yml
+.docker/
+*.log
+
+# Database backups
+*.sql
+*.sql.gz
+backup/
+backups/

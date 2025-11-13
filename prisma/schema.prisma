@@ -96,6 +96,13 @@ model Quotation {
   propertyId String?
   property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
 
+  // Vehicle Info (for automotive)
+  vehicleInfo Json?  // marca, modelo, año, tipo, imageUrl, tieneFilmViejo
+
+  // Customer Type & Discount
+  customerType String?  // nuevo, leal, mayorista, corporativo
+  discountPercentage Decimal @db.Decimal(5, 2) @default(0)
+
   // Calculation Results
   totalBaseArea        Decimal @db.Decimal(10, 2)
   totalWasteArea       Decimal @db.Decimal(10, 2)
@@ -118,12 +125,19 @@ model Quotation {
   // Additional details (JSON)
   calculationDetails Json?
 
+  // WhatsApp Integration
+  sentViaWhatsApp Boolean   @default(false)
+  whatsappSentAt  DateTime?
+  whatsappStatus  String?   // sent, delivered, read, failed
+  whatsappMessage String?   @db.Text
+
   // Dates
   validUntil DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   items QuotationItem[]
+  request QuotationRequest?
 
   @@map("quotations")
 }
@@ -265,3 +279,78 @@ model Opening {
 
   @@map("openings")
 }
+
+// ============================================================================
+// PRICING CONFIGURATION (Per Vehicle Type)
+// ============================================================================
+
+model PricingConfig {
+  id              String   @id @default(uuid())
+  vehicleType     String   // sedan, suv, coupe, pickup
+  pricePerSqm     Decimal  @db.Decimal(10, 2)
+  productId       String?  // Default product ID
+  tintLevel       String?  // VLT% recommended (e.g., "35%", "20%", "5%")
+  description     String?
+
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([vehicleType])
+  @@map("pricing_configs")
+}
+
+// ============================================================================
+// QUOTATION REQUESTS (From Clients - Incomplete)
+// ============================================================================
+
+enum RequestStatus {
+  PENDING       // Waiting for manager to complete
+  IN_PROGRESS   // Manager is working on it
+  COMPLETED     // Quotation created
+  SENT          // Sent to client via WhatsApp
+  CANCELLED     // Request cancelled
+}
+
+enum ServiceType {
+  PARABRISAS         // Windshield only
+  VISERA             // Visor strip
+  PARABRISAS_IR      // Windshield with IR (70% or 50%)
+  LATERALES_LUNETA   // Side windows + rear
+  COMPLETO           // All windows
+  PERSONALIZADO      // Custom
+}
+
+model QuotationRequest {
+  id              String        @id @default(uuid())
+
+  // Client info (minimal)
+  phone           String
+  vehiclePhotos   Json          // Array of photo URLs
+
+  // Optional service selection
+  serviceType     ServiceType?
+  notes           String?       @db.Text
+
+  // Status tracking
+  status          RequestStatus @default(PENDING)
+  assignedTo      String?       // Manager user ID
+
+  // Link to completed quotation
+  quotationId     String?       @unique
+  quotation       Quotation?    @relation(fields: [quotationId], references: [id])
+
+  // Metadata
+  source          String        @default("client_form") // client_form, whatsapp, etc.
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  completedAt     DateTime?
+
+  @@index([status])
+  @@index([phone])
+  @@map("quotation_requests")
+}
+
+// ============================================================================
+// UPDATE QUOTATION MODEL
+// ============================================================================

@@ -1,0 +1,40 @@
+# ============================================================================
+# Development Dockerfile for Next.js 15 Application
+# ============================================================================
+# This Dockerfile is optimized for development with hot-reload
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies needed for Prisma
+RUN apk add --no-cache libc6-compat openssl curl
+
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install ALL dependencies (including dev)
+RUN npm ci --legacy-peer-deps
+
+# Copy prisma schema
+COPY prisma ./prisma/
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Copy rest of the application
+COPY . .
+
+# Set environment
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
+
+# Default command (can be overridden in docker-compose)
+CMD ["npm", "run", "dev"]

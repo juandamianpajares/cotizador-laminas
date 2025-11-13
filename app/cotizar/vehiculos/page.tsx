@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Car, Plus, Trash2, Ruler, DollarSign, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Car, Plus, Trash2, Ruler, DollarSign, ArrowLeft, CheckCircle, Send } from 'lucide-react';
 import {
   getVehicleTemplate,
   getAllWindows,
   VehicleWindowTemplate,
   VEHICLE_TEMPLATES
 } from '@/lib/vehicleWindows';
+import { getVehicleImageUrl } from '@/lib/vehicleImages';
 
 interface Product {
   id: string;
@@ -56,6 +57,7 @@ export default function VehiculosPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [quotationPreview, setQuotationPreview] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
   // Para integración futura con API de vehículos
   const [vehicleBrands, setVehicleBrands] = useState<string[]>([]);
@@ -73,6 +75,23 @@ export default function VehiculosPage() {
       }
     };
     loadProducts();
+
+    // Verificar si hay datos pre-cargados desde una solicitud
+    const preloadData = localStorage.getItem('quotation_preload');
+    if (preloadData) {
+      try {
+        const data = JSON.parse(preloadData);
+        // Pre-cargar el teléfono del cliente
+        if (data.phone) {
+          // Nota: El formulario deberá mostrar el teléfono pre-cargado
+          console.log('Pre-cargando datos de solicitud:', data);
+        }
+        // Limpiar después de leer
+        localStorage.removeItem('quotation_preload');
+      } catch (error) {
+        console.error('Error al cargar datos pre-cargados:', error);
+      }
+    }
   }, []);
 
   // Precios predefinidos por tipo de vehículo (por m²)
@@ -170,8 +189,8 @@ export default function VehiculosPage() {
     const año = formData.get('año') as string;
     const tieneFilmViejo = formData.get('tieneFilmViejo') === 'si';
 
-    // Simular carga de imagen del vehículo
-    const imageUrl = `https://placehold.co/800x400/e0e0e0/666666?text=${encodeURIComponent(marca + ' ' + modelo + ' ' + año)}`;
+    // Obtener imagen del vehículo (placeholder por ahora, API en Sprint 8)
+    const imageUrl = getVehicleImageUrl(tipo, marca, modelo, año);
 
     setVehicle({
       marca,
@@ -186,6 +205,67 @@ export default function VehiculosPage() {
     loadWindowsFromTemplate(tipo);
 
     setStep(3);
+  };
+
+  const sendWhatsApp = async () => {
+    if (!customer?.phone) {
+      alert('No hay número de teléfono del cliente.');
+      return;
+    }
+
+    setIsSendingWhatsApp(true);
+    try {
+      // Preparar datos de la cotización
+      const quotationData = {
+        customer: {
+          name: customer.name,
+          email: customer.email,
+          phone: customer.phone,
+        },
+        customerType: customer.customerType,
+        discountPercentage: customer.discount || 0,
+        vehicleInfo: vehicle,
+        items: openings.map(o => {
+          const product = products.find(p => p.id === o.productId);
+          const area = o.width * o.height;
+          const pricePerSqm = vehicle?.tipo ? preciosPorTipoVehiculo[vehicle.tipo] : 150;
+          return {
+            openingName: o.name,
+            finalArea: area.toFixed(2),
+            product: {
+              name: product?.name || 'Lámina de Seguridad Polarizada',
+            },
+            itemSubtotal: (area * pricePerSqm).toFixed(2),
+          };
+        }),
+        subtotalBeforeDiscount: quotationPreview?.summary?.subtotal || 0,
+        subtotalAfterDiscount: quotationPreview?.summary?.total_after_discount || 0,
+        total: quotationPreview?.summary?.grand_total || 0,
+      };
+
+      const response = await fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: customer.phone,
+          quotation: quotationData,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.whatsappUrl) {
+        // Abrir WhatsApp Web en nueva ventana
+        window.open(data.whatsappUrl, '_blank');
+      } else {
+        alert('Error al generar el mensaje de WhatsApp');
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp:', error);
+      alert('Error al enviar por WhatsApp. Intenta nuevamente.');
+    } finally {
+      setIsSendingWhatsApp(false);
+    }
   };
 
   const calculateQuotation = async () => {
@@ -771,19 +851,41 @@ export default function VehiculosPage() {
               </div>
             </div>
 
-            <div className="flex gap-4">
+            <div className="space-y-4">
+              {/* Botón principal de WhatsApp */}
               <button
-                onClick={() => setStep(3)}
-                className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                onClick={sendWhatsApp}
+                disabled={isSendingWhatsApp}
+                className="w-full px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-bold text-lg flex items-center justify-center gap-2"
               >
-                Editar
+                {isSendingWhatsApp ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Generando mensaje...
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-5 h-5" />
+                    Enviar Cotización por WhatsApp
+                  </>
+                )}
               </button>
-              <button
-                onClick={() => router.push('/')}
-                className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
-              >
-                Nueva Cotización
-              </button>
+
+              {/* Botones secundarios */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setStep(3)}
+                  className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => router.push('/')}
+                  className="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Nueva Cotización
+                </button>
+              </div>
             </div>
           </div>
         </div>

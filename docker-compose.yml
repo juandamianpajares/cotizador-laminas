@@ -1,25 +1,148 @@
-version: '3.8'
+version: '3.9'
 
 services:
-  mysql:
+  # ============================================================================
+  # MySQL Database
+  # ============================================================================
+  db:
     image: mysql:8.0
-    container_name: cotizador-mysql
+    container_name: cotizador-db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: Cambiala1234
-      MYSQL_DATABASE: cotizador_laminas
-      MYSQL_USER: juan
-      MYSQL_PASSWORD: Cambiala1234
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-Cambiala1234}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-cotizador_laminas}
+      MYSQL_USER: ${MYSQL_USER:-juan}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Cambiala1234}
+      TZ: America/Argentina/Buenos_Aires
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d
+    networks:
+      - cotizador-network
     command: --default-authentication-plugin=mysql_native_password
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-Cambiala1234}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
+  # ============================================================================
+  # phpMyAdmin (Optional - for database management)
+  # ============================================================================
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: cotizador-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: ${MYSQL_USER:-juan}
+      PMA_PASSWORD: ${MYSQL_PASSWORD:-Cambiala1234}
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "${PHPMYADMIN_PORT:-8080}:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cotizador-network
+
+  # ============================================================================
+  # Next.js Application
+  # ============================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    container_name: cotizador-app
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: mysql://${MYSQL_USER:-juan}:${MYSQL_PASSWORD:-Cambiala1234}@db:3306/${MYSQL_DATABASE:-cotizador_laminas}
+
+      # App Config
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+
+      # JWT Secret (generate with: openssl rand -base64 32)
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+
+      # Email Config (optional)
+      EMAIL_HOST: ${EMAIL_HOST:-smtp.gmail.com}
+      EMAIL_PORT: ${EMAIL_PORT:-587}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@cotizador.com}
+
+      # WhatsApp Config (optional)
+      WHATSAPP_BUSINESS_NUMBER: ${WHATSAPP_BUSINESS_NUMBER:-}
+      WHATSAPP_API_KEY: ${WHATSAPP_API_KEY:-}
+
+      # File Upload (future - Cloudinary)
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+
+      # Vehicle Images API (Sprint 8)
+      NEXT_PUBLIC_VEHICLE_API_URL: ${NEXT_PUBLIC_VEHICLE_API_URL:-}
+
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - cotizador-network
+    volumes:
+      # Logs
+      - app_logs:/app/.next/cache
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    command: sh -c "npx prisma migrate deploy && node server.js"
+
+  # ============================================================================
+  # Redis (Optional - for caching and sessions)
+  # ============================================================================
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: cotizador-redis
+  #   restart: unless-stopped
+  #   ports:
+  #     - "${REDIS_PORT:-6379}:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - cotizador-network
+  #   healthcheck:
+  #     test: ["CMD", "redis-cli", "ping"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+
+# ============================================================================
+# Networks
+# ============================================================================
+networks:
+  cotizador-network:
+    driver: bridge
+
+# ============================================================================
+# Volumes
+# ============================================================================
 volumes:
   mysql_data:
     driver: local
+  app_logs:
+    driver: local
+  # redis_data:
+  #   driver: local
