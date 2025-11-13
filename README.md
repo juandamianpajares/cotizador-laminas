@@ -1,28 +1,26 @@
-# Sistema Completo de Cotización de Films y Laminados 🎯
+# Sistema de Cotización de Láminas para Vidrios
 
-## Sistema Multi-Vertical para Automotriz, Residencial, Comercial y Arquitectónico
+## Plataforma Multi-Vertical: Automotriz, Residencial, Comercial y Arquitectónico
 
+[![Next.js](https://img.shields.io/badge/Next.js-15.1.5-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748)](https://www.prisma.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![React](https://img.shields.io/badge/react-18+-blue.svg)](https://reactjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 
 ---
 
 ## 📋 Tabla de Contenidos
 
-- [Visión General](#visión-general)
-- [Características Principales](#características-principales)
+- [Visión del Proyecto](#visión-del-proyecto)
+- [Estado Actual (Sprints 1-7)](#estado-actual-sprints-1-7)
+- [Roadmap 2025 (Sprints 8-13)](#roadmap-2025-sprints-8-13)
 - [Arquitectura](#arquitectura)
 - [Tecnologías](#tecnologías)
 - [Instalación](#instalación)
 - [Uso](#uso)
-- [API Documentation](#api-documentation)
-- [Seguridad](#seguridad)
-- [Deployment](#deployment)
 - [Testing](#testing)
 - [Contribuir](#contribuir)
-- [Licencia](#licencia)
 
 ---
 

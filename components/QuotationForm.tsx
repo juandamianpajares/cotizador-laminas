@@ -186,6 +186,15 @@ const PRODUCT_TYPES = [
 // MAIN COMPONENT
 // ============================================================================
 
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  category: string;
+  pricePerSqm: number;
+  installationPerSqm: number;
+}
+
 export default function QuotationForm() {
   // State
   const [step, setStep] = useState(1);
@@ -197,6 +206,8 @@ export default function QuotationForm() {
   const [quotationPreview, setQuotationPreview] = useState<any>(null);
   const [isCalculating, setIsCalculating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
   // Form handling
   const {
@@ -206,6 +217,22 @@ export default function QuotationForm() {
     watch,
     formState: { errors },
   } = useForm();
+
+  // Load products on mount
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        setProducts(data);
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setLoadingProducts(false);
+      }
+    };
+    loadProducts();
+  }, []);
 
   // ============================================================================
   // STEP 1: SELECT VERTICAL
@@ -267,7 +294,12 @@ export default function QuotationForm() {
         <form
           onSubmit={handleSubmit((data) => {
             setCustomer(data as Customer);
-            setStep(3);
+            // Skip property form for automotive vertical
+            if (vertical === 'automotive') {
+              setStep(4);
+            } else {
+              setStep(3);
+            }
           })}
           className="space-y-6"
         >
@@ -498,26 +530,46 @@ export default function QuotationForm() {
   };
 
   const calculateQuotation = async () => {
+    // Validate that all openings have a product selected
+    const hasInvalidOpenings = rooms.some(room =>
+      room.openings.some(opening => !opening.productId)
+    );
+
+    if (hasInvalidOpenings) {
+      alert('Por favor selecciona un producto para todas las aberturas antes de calcular.');
+      return;
+    }
+
     setIsCalculating(true);
-    
+
     try {
-      // Aquí iría la llamada al API
-      const response = await fetch('/api/v1/quotations/calculate', {
+      const response = await fetch('/api/quotations/calculate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           vertical,
           customer,
-          property,
+          property: vertical === 'automotive' ? null : property,
           rooms,
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error ${response.status}`);
+      }
+
       const data = await response.json();
-      setQuotationPreview(data);
-      setStep(5);
+
+      if (data.success) {
+        setQuotationPreview(data.quotation);
+        setStep(5);
+      } else {
+        throw new Error(data.error || 'Error al calcular la cotización');
+      }
     } catch (error) {
       console.error('Error calculating quotation:', error);
+      alert(`Error al calcular la cotización: ${error instanceof Error ? error.message : 'Error desconocido'}`);
     } finally {
       setIsCalculating(false);
     }
@@ -653,7 +705,7 @@ export default function QuotationForm() {
                       {room.openings.map((opening, openingIndex) => (
                         <div
                           key={opening.id}
-                          className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-6 gap-3"
+                          className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-8 gap-3"
                         >
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -729,15 +781,17 @@ export default function QuotationForm() {
                             />
                           </div>
 
-                          <div>
+                          <div className="col-span-2">
                             <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Film
+                              Categoría
                             </label>
                             <select
                               value={opening.productType}
                               onChange={(e) => {
                                 const updated = [...rooms];
                                 updated[roomIndex].openings[openingIndex].productType = e.target.value as ProductType;
+                                // Reset product ID when category changes
+                                updated[roomIndex].openings[openingIndex].productId = '';
                                 setRooms(updated);
                               }}
                               className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
@@ -747,6 +801,30 @@ export default function QuotationForm() {
                                   {pt.label}
                                 </option>
                               ))}
+                            </select>
+                          </div>
+
+                          <div className="col-span-2">
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              Producto
+                            </label>
+                            <select
+                              value={opening.productId}
+                              onChange={(e) => {
+                                const updated = [...rooms];
+                                updated[roomIndex].openings[openingIndex].productId = e.target.value;
+                                setRooms(updated);
+                              }}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 rounded"
+                            >
+                              <option value="">Seleccionar...</option>
+                              {products
+                                .filter(p => opening.productType && p.category === opening.productType.toUpperCase())
+                                .map((product) => (
+                                  <option key={product.id} value={product.id}>
+                                    {product.name} - ${product.pricePerSqm}/m²
+                                  </option>
+                                ))}
                             </select>
                           </div>
 
@@ -760,7 +838,7 @@ export default function QuotationForm() {
                           </div>
 
                           {/* Area preview */}
-                          <div className="col-span-6 text-xs text-gray-600 flex items-center gap-4">
+                          <div className="col-span-8 text-xs text-gray-600 flex items-center gap-4">
                             <span className="flex items-center gap-1">
                               <Ruler className="w-3 h-3" />
                               Área: {(opening.width * opening.height * opening.quantity).toFixed(2)} m²
@@ -769,6 +847,14 @@ export default function QuotationForm() {
                             <span>
                               {PRODUCT_TYPES.find(pt => pt.value === opening.productType)?.description}
                             </span>
+                            {opening.productId && products.find(p => p.id === opening.productId) && (
+                              <>
+                                <span className="text-gray-400">|</span>
+                                <span className="font-medium">
+                                  {products.find(p => p.id === opening.productId)?.name}
+                                </span>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -783,7 +869,7 @@ export default function QuotationForm() {
         {rooms.length > 0 && (
           <div className="mt-8 flex gap-4">
             <button
-              onClick={() => setStep(3)}
+              onClick={() => vertical === 'automotive' ? setStep(2) : setStep(3)}
               className="flex-1 px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               Atrás

@@ -5,10 +5,10 @@ REM Ejecutar: scripts\init-db.bat
 echo Inicializando base de datos...
 
 REM Verificar si existe .env
-if not exist .env (
+if not exist ../.env (
     echo ERROR: Archivo .env no encontrado
     echo Copiando .env.example a .env...
-    copy .env.example .env
+    copy ../.env.example ../.env
     echo Por favor edita .env con tus credenciales de MySQL
     pause
     exit /b 1
