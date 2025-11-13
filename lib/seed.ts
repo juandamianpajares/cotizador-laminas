@@ -1,11 +1,13 @@
 /**
  * Seed script to populate database with initial products
- * Run: npx tsx lib/seed.ts
+ * Run: npm run db:seed
  */
 
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ["error"],
+});
 
 async function main() {
   console.log("🌱 Seeding database...");

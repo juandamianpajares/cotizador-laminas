@@ -2,6 +2,7 @@
   "name": "cotizador-laminas",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +11,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "tsx lib/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

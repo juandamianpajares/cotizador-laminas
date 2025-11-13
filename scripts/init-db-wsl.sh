@@ -21,7 +21,7 @@ if ! command -v mysql &> /dev/null; then
     echo ""
     echo "Instalando MySQL..."
     sudo apt update
-    sudo apt install mysql-server -y
+    sudo apt install mariadb-server -y
     echo -e "${GREEN}✅ MySQL instalado${NC}"
 fi
 
