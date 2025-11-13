@@ -31,27 +31,6 @@ services:
       start_period: 30s
 
   # ============================================================================
-  # phpMyAdmin (Optional - for database management)
-  # ============================================================================
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    container_name: cotizador-phpmyadmin
-    restart: unless-stopped
-    environment:
-      PMA_HOST: db
-      PMA_PORT: 3306
-      PMA_USER: ${MYSQL_USER:-juan}
-      PMA_PASSWORD: ${MYSQL_PASSWORD:-Cambiala1234}
-      UPLOAD_LIMIT: 100M
-    ports:
-      - "${PHPMYADMIN_PORT:-8080}:80"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - cotizador-network
-
-  # ============================================================================
   # Next.js Application
   # ============================================================================
   app:
