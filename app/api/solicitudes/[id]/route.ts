@@ -6,11 +6,12 @@ const prisma = new PrismaClient();
 // GET: Obtener una solicitud específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const quotationRequest = await prisma.quotationRequest.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         quotation: {
           include: {
@@ -45,9 +46,10 @@ export async function GET(
 // PATCH: Actualizar estado de la solicitud
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { status, assignedTo, quotationId } = body;
 
@@ -62,7 +64,7 @@ export async function PATCH(
     }
 
     const quotationRequest = await prisma.quotationRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
     });
 
@@ -79,11 +81,12 @@ export async function PATCH(
 // DELETE: Cancelar/eliminar solicitud
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     await prisma.quotationRequest.update({
-      where: { id: params.id },
+      where: { id },
       data: { status: 'CANCELLED' },
     });
 
