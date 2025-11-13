@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Building2, Home, Plus, Trash2, Ruler, DollarSign, ArrowLeft, CheckCircle } from 'lucide-react';
 
@@ -44,7 +44,7 @@ interface Customer {
   phone?: string;
 }
 
-export default function ObrasPage() {
+function ObrasContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const vertical = searchParams?.get('tipo') || 'residential';
@@ -656,5 +656,22 @@ export default function ObrasPage() {
         </div>
       )}
     </main>
+  );
+}
+
+export default function ObrasPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <ObrasContent />
+    </Suspense>
   );
 }
