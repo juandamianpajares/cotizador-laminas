@@ -1,0 +1,267 @@
+// Prisma schema for Films & Laminates Quotation System
+// MySQL Database
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CUSTOMERS
+// ============================================================================
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  whatsapp  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotations Quotation[]
+
+  @@map("customers")
+}
+
+// ============================================================================
+// PRODUCTS (Films & Laminates)
+// ============================================================================
+
+enum ProductCategory {
+  LAMINATE_SECURITY
+  SOLAR_CONTROL
+  VINYL_DECORATIVE
+  PRIVACY
+}
+
+model Product {
+  id          String          @id @default(uuid())
+  sku         String          @unique
+  name        String
+  description String?         @db.Text
+  category    ProductCategory
+
+  // Pricing
+  pricePerSqm        Decimal @db.Decimal(10, 2)
+  installationPerSqm Decimal @db.Decimal(10, 2)
+
+  // Specifications (JSON)
+  specifications Json?
+
+  // Status
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotationItems QuotationItem[]
+
+  @@map("products")
+}
+
+// ============================================================================
+// QUOTATIONS
+// ============================================================================
+
+enum VerticalType {
+  AUTOMOTIVE
+  RESIDENTIAL
+  COMMERCIAL
+  ARCHITECTURAL
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  REJECTED
+  EXPIRED
+}
+
+model Quotation {
+  id       String           @id @default(uuid())
+  vertical VerticalType
+  status   QuotationStatus  @default(DRAFT)
+
+  // Customer
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  // Property Info (for residential/commercial)
+  propertyId String?
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  // Calculation Results
+  totalBaseArea        Decimal @db.Decimal(10, 2)
+  totalWasteArea       Decimal @db.Decimal(10, 2)
+  totalFinalArea       Decimal @db.Decimal(10, 2)
+
+  materialSubtotal     Decimal @db.Decimal(10, 2)
+  installationSubtotal Decimal @db.Decimal(10, 2)
+  subtotalBeforeDiscount Decimal @db.Decimal(10, 2)
+
+  volumeDiscountPercentage Decimal @db.Decimal(5, 4) @default(0)
+  volumeDiscountAmount     Decimal @db.Decimal(10, 2) @default(0)
+
+  subtotalAfterDiscount Decimal @db.Decimal(10, 2)
+
+  taxRate   Decimal @db.Decimal(5, 4)
+  taxAmount Decimal @db.Decimal(10, 2)
+
+  total Decimal @db.Decimal(10, 2)
+
+  // Additional details (JSON)
+  calculationDetails Json?
+
+  // Dates
+  validUntil DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  items QuotationItem[]
+
+  @@map("quotations")
+}
+
+// ============================================================================
+// QUOTATION ITEMS
+// ============================================================================
+
+model QuotationItem {
+  id String @id @default(uuid())
+
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  // Opening reference
+  openingId   String
+  openingName String
+  openingType String
+
+  // Dimensions
+  baseWidth  Decimal @db.Decimal(10, 2)
+  baseHeight Decimal @db.Decimal(10, 2)
+  baseArea   Decimal @db.Decimal(10, 2)
+
+  wastePercentage Decimal @db.Decimal(5, 4)
+  wasteArea       Decimal @db.Decimal(10, 2)
+  finalArea       Decimal @db.Decimal(10, 2)
+
+  quantity Int @default(1)
+
+  // Costs
+  materialCostPerSqm      Decimal @db.Decimal(10, 2)
+  installationCostPerSqm  Decimal @db.Decimal(10, 2)
+  complexityFactor        Decimal @db.Decimal(5, 2) @default(1.0)
+
+  materialSubtotal     Decimal @db.Decimal(10, 2)
+  installationSubtotal Decimal @db.Decimal(10, 2)
+  itemSubtotal         Decimal @db.Decimal(10, 2)
+
+  // Specifications (JSON)
+  specifications Json?
+
+  @@map("quotation_items")
+}
+
+// ============================================================================
+// PROPERTIES (Residential/Commercial)
+// ============================================================================
+
+enum PropertyType {
+  HOUSE
+  APARTMENT
+  OFFICE
+  BUILDING
+  RETAIL
+}
+
+model Property {
+  id      String       @id @default(uuid())
+  type    PropertyType
+  address String?
+  city    String?
+  floors  Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rooms      Room[]
+  quotations Quotation[]
+
+  @@map("properties")
+}
+
+// ============================================================================
+// ROOMS
+// ============================================================================
+
+enum RoomType {
+  LIVING_ROOM
+  BEDROOM
+  KITCHEN
+  BATHROOM
+  OFFICE
+  MEETING_ROOM
+  LOBBY
+  OTHER
+}
+
+model Room {
+  id    String   @id @default(uuid())
+  name  String
+  type  RoomType
+  floor Int      @default(1)
+
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  openings Opening[]
+
+  @@map("rooms")
+}
+
+// ============================================================================
+// OPENINGS (Windows, Doors, etc.)
+// ============================================================================
+
+enum OpeningType {
+  WINDOW
+  DOOR
+  SLIDING_DOOR
+  SHOWER_ENCLOSURE
+  PARTITION
+  SKYLIGHT
+  STRIP_HORIZONTAL
+  STRIP_VERTICAL
+  CURTAIN_WALL
+  AUTOMOTIVE_CURVED
+  AUTOMOTIVE_FLAT
+}
+
+model Opening {
+  id   String      @id @default(uuid())
+  type OpeningType
+  name String?
+
+  width    Decimal @db.Decimal(10, 2)
+  height   Decimal @db.Decimal(10, 2)
+  quantity Int     @default(1)
+
+  roomId String
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  // Specifications (JSON)
+  // glassType, curved, difficultAccess, etc.
+  specifications Json?
+
+  @@map("openings")
+}
