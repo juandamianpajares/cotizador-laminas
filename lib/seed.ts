@@ -3,7 +3,7 @@
  * Run: npm run db:seed
  */
 
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ProductCategory } from "@prisma/client";
 
 const prisma = new PrismaClient({
   log: ["error"],
@@ -25,7 +25,7 @@ async function main() {
       sku: "SEC-CLEAR-4",
       name: "Laminado Seguridad Clear 4mil",
       description: "Film de seguridad transparente 4mil - Protección anti-impacto básica",
-      category: "LAMINATE_SECURITY",
+      category: ProductCategory.LAMINATE_SECURITY,
       pricePerSqm: 22.0,
       installationPerSqm: 12.0,
       specifications: {
@@ -38,7 +38,7 @@ async function main() {
       sku: "SEC-CLEAR-8",
       name: "Laminado Seguridad Clear 8mil",
       description: "Film de seguridad transparente 8mil - Protección media",
-      category: "LAMINATE_SECURITY",
+      category: ProductCategory.LAMINATE_SECURITY,
       pricePerSqm: 32.0,
       installationPerSqm: 15.0,
       specifications: {
@@ -51,7 +51,7 @@ async function main() {
       sku: "SEC-CLEAR-12",
       name: "Laminado Seguridad Clear 12mil",
       description: "Film de seguridad transparente 12mil - Máxima protección",
-      category: "LAMINATE_SECURITY",
+      category: ProductCategory.LAMINATE_SECURITY,
       pricePerSqm: 45.0,
       installationPerSqm: 18.0,
       specifications: {
@@ -66,7 +66,7 @@ async function main() {
       sku: "SOL-CER-70",
       name: "Control Solar Cerámico 70%",
       description: "Film cerámico con 70% de visibilidad - Alto rechazo de calor",
-      category: "SOLAR_CONTROL",
+      category: ProductCategory.SOLAR_CONTROL,
       pricePerSqm: 38.0,
       installationPerSqm: 16.0,
       specifications: {
@@ -80,7 +80,7 @@ async function main() {
       sku: "SOL-CER-50",
       name: "Control Solar Cerámico 50%",
       description: "Film cerámico con 50% de visibilidad - Rechazo medio",
-      category: "SOLAR_CONTROL",
+      category: ProductCategory.SOLAR_CONTROL,
       pricePerSqm: 42.0,
       installationPerSqm: 16.0,
       specifications: {
@@ -94,7 +94,7 @@ async function main() {
       sku: "SOL-CHAR-5",
       name: "Control Solar Charcoal 5%",
       description: "Film oscuro con 5% de visibilidad - Máximo rechazo",
-      category: "SOLAR_CONTROL",
+      category: ProductCategory.SOLAR_CONTROL,
       pricePerSqm: 35.0,
       installationPerSqm: 15.0,
       specifications: {
@@ -108,7 +108,7 @@ async function main() {
       sku: "SOL-BRONZE-20",
       name: "Control Solar Bronze 20%",
       description: "Film color bronce con 20% de visibilidad",
-      category: "SOLAR_CONTROL",
+      category: ProductCategory.SOLAR_CONTROL,
       pricePerSqm: 30.0,
       installationPerSqm: 14.0,
       specifications: {
@@ -124,7 +124,7 @@ async function main() {
       sku: "DEC-FROST",
       name: "Vinílico Esmerilado",
       description: "Film decorativo efecto esmerilado - Privacidad y elegancia",
-      category: "VINYL_DECORATIVE",
+      category: ProductCategory.VINYL_DECORATIVE,
       pricePerSqm: 25.0,
       installationPerSqm: 13.0,
       specifications: {
@@ -137,7 +137,7 @@ async function main() {
       sku: "DEC-WHITE",
       name: "Vinílico Blanco",
       description: "Film vinílico blanco - Privacidad total",
-      category: "VINYL_DECORATIVE",
+      category: ProductCategory.VINYL_DECORATIVE,
       pricePerSqm: 22.0,
       installationPerSqm: 12.0,
       specifications: {
@@ -151,7 +151,7 @@ async function main() {
       sku: "DEC-STRIPE",
       name: "Vinílico Franjas",
       description: "Film con franjas horizontales/verticales personalizables",
-      category: "VINYL_DECORATIVE",
+      category: ProductCategory.VINYL_DECORATIVE,
       pricePerSqm: 28.0,
       installationPerSqm: 15.0,
       specifications: {
@@ -166,7 +166,7 @@ async function main() {
       sku: "PRIV-MIRROR",
       name: "Privacidad Espejado One-Way",
       description: "Film espejado de privacidad unidireccional",
-      category: "PRIVACY",
+      category: ProductCategory.PRIVACY,
       pricePerSqm: 33.0,
       installationPerSqm: 15.0,
       specifications: {
@@ -179,7 +179,7 @@ async function main() {
       sku: "PRIV-BLACKOUT",
       name: "Privacidad Blackout",
       description: "Film opaco total - Bloqueo completo de luz",
-      category: "PRIVACY",
+      category: ProductCategory.PRIVACY,
       pricePerSqm: 28.0,
       installationPerSqm: 14.0,
       specifications: {
@@ -192,7 +192,7 @@ async function main() {
       sku: "PRIV-GRADIENT",
       name: "Privacidad Degradado",
       description: "Film con efecto degradado - Privacidad gradual",
-      category: "PRIVACY",
+      category: ProductCategory.PRIVACY,
       pricePerSqm: 30.0,
       installationPerSqm: 14.0,
       specifications: {
