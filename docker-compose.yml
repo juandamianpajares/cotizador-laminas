@@ -38,7 +38,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NODE_ENV: production
+        NODE_ENV: prod
     container_name: cotizador-app
     restart: unless-stopped
     environment:
@@ -46,7 +46,7 @@ services:
       DATABASE_URL: mysql://${MYSQL_USER:-juan}:${MYSQL_PASSWORD:-Cambiala1234}@db:3306/${MYSQL_DATABASE:-cotizador_laminas}
 
       # App Config
-      NODE_ENV: production
+      NODE_ENV: prod
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
 
       # JWT Secret (generate with: openssl rand -base64 32)

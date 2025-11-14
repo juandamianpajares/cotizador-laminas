@@ -151,13 +151,24 @@ install_basic_tools() {
     log "Instalando herramientas básicas..."
     case "$OS" in
         ubuntu|debian)
-            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-                git curl wget rsync openssh-client openssh-server \
-                apt-transport-https ca-certificates gnupg-agent \
-                software-properties-common unzip zip \
-                make nano vim htop tree net-tools \
-                dnsutils iputils-ping traceroute \
-                build-essential
+            # Paquetes esenciales que existen en todas las versiones
+            local basic_packages="git curl wget rsync openssh-client openssh-server apt-transport-https ca-certificates gnupg unzip zip make nano vim htop tree net-tools"
+
+            # Paquetes opcionales que pueden no existir en todas las versiones
+            local optional_packages="gnupg-agent software-properties-common dnsutils iputils-ping traceroute build-essential"
+
+            # Instalar paquetes básicos
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $basic_packages || {
+                warn "Algunos paquetes básicos fallaron, intentando uno por uno..."
+                for pkg in $basic_packages; do
+                    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $pkg 2>/dev/null || warn "No se pudo instalar: $pkg"
+                done
+            }
+
+            # Intentar instalar paquetes opcionales
+            for pkg in $optional_packages; do
+                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq $pkg 2>/dev/null || info "Paquete opcional no disponible: $pkg"
+            done
             ;;
         arch)
             sudo pacman -S --noconfirm --needed \
