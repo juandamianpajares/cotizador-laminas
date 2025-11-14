@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Phone, Image as ImageIcon, AlertCircle } from 'lucide-react';
 
-export default function NuevaCotizacionPage() {
+function NuevaCotizacionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestId = searchParams?.get('requestId');
@@ -249,5 +249,22 @@ export default function NuevaCotizacionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NuevaCotizacionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-gray-600">Cargando...</p>
+          </div>
+        </div>
+      }
+    >
+      <NuevaCotizacionContent />
+    </Suspense>
   );
 }
