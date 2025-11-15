@@ -17,9 +17,11 @@
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^6.1.0",
+    "composer": "^4.1.0",
     "decimal.js": "^10.6.0",
     "lucide-react": "^0.468.0",
     "next": "^15.5.6",
+    "php": "^1.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.54.2",
