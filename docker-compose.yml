@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   # ============================================================================
   # MySQL Database
@@ -43,7 +41,7 @@ services:
     restart: unless-stopped
     environment:
       # Database
-      DATABASE_URL: mysql://${MYSQL_USER:-juan}:${MYSQL_PASSWORD:-Cambiala1234}@db:3306/${MYSQL_DATABASE:-cotizador_laminas}
+      DATABASE_URL: mysql://${MYSQL_USER:-juan}:${MYSQL_PASSWORD:-Cambiala1234}@cotizador-db:3306/${MYSQL_DATABASE:-cotizador_laminas}
 
       # App Config
       NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
