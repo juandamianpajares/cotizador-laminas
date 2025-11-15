@@ -28,6 +28,14 @@ readonly SSH_PORT="${SSH_PORT:-22}"
 readonly FAIL2BAN_ENABLED="${FAIL2BAN_ENABLED:-true}"
 readonly AUTO_UPDATES_ENABLED="${AUTO_UPDATES_ENABLED:-true}"
 
+# Variables de configuración del proyecto
+PROJECT_REPO_URL="${PROJECT_REPO_URL:-}"
+PROJECT_ENVIRONMENT="${PROJECT_ENVIRONMENT:-dev}"  # dev, stage, prod
+PROJECT_TYPE="${PROJECT_TYPE:-}"  # docker, lamp
+PROJECT_DIR="${PROJECT_DIR:-/opt/app}"
+SETUP_GITHUB_SSH="${SETUP_GITHUB_SSH:-true}"
+SSH_KEY_PATH="${SSH_KEY_PATH:-}"
+
 #===============================================================================
 # Funciones de Utilidad
 #===============================================================================
@@ -890,25 +898,283 @@ setup_ssh_keys() {
     if [ -f ~/.ssh/authorized_keys ]; then
         chmod 600 ~/.ssh/authorized_keys
     fi
+
+    # Configurar SSH config para GitHub
+    if [ ! -f ~/.ssh/config ]; then
+        cat > ~/.ssh/config <<'EOF'
+Host github.com
+    HostName github.com
+    User git
+    IdentityFile ~/.ssh/id_ed25519
+    StrictHostKeyChecking accept-new
+EOF
+        chmod 600 ~/.ssh/config
+    fi
 }
 
 setup_github_ssh() {
-    log "Configurando acceso SSH a GitHub..."
-
-    if [ ! -f ~/.ssh/id_ed25519 ]; then
-        info "Generando nueva clave SSH (Ed25519)..."
-        ssh-keygen -t ed25519 -C "devops@$(hostname)" -N "" -f ~/.ssh/id_ed25519
+    if [ "$SETUP_GITHUB_SSH" != "true" ]; then
+        info "Configuración de SSH para GitHub omitida"
+        return
     fi
 
-    log "Por favor agrega la siguiente clave pública a tu cuenta de GitHub:"
-    echo -e "${YELLOW}"
-    cat ~/.ssh/id_ed25519.pub
-    echo -e "${NC}"
+    log "Configurando acceso SSH a GitHub..."
 
-    read -p "Presiona Enter después de haber agregado la clave a GitHub..."
+    # Si se proporcionó una clave SSH específica
+    if [ -n "$SSH_KEY_PATH" ] && [ -f "$SSH_KEY_PATH" ]; then
+        info "Usando clave SSH proporcionada: $SSH_KEY_PATH"
+        cp "$SSH_KEY_PATH" ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
 
+        # Intentar copiar la clave pública si existe
+        if [ -f "${SSH_KEY_PATH}.pub" ]; then
+            cp "${SSH_KEY_PATH}.pub" ~/.ssh/id_ed25519.pub
+            chmod 644 ~/.ssh/id_ed25519.pub
+        else
+            # Generar la clave pública desde la privada
+            ssh-keygen -y -f ~/.ssh/id_ed25519 > ~/.ssh/id_ed25519.pub
+            chmod 644 ~/.ssh/id_ed25519.pub
+        fi
+    # Verificar si ya existe una clave
+    elif [ -f ~/.ssh/id_ed25519 ]; then
+        info "Clave SSH Ed25519 ya existe, reutilizándola..."
+    elif [ -f ~/.ssh/id_rsa ]; then
+        info "Clave SSH RSA ya existe, reutilizándola..."
+        # Actualizar config para usar RSA
+        sed -i 's/id_ed25519/id_rsa/g' ~/.ssh/config 2>/dev/null || true
+    else
+        # Generar nueva clave Ed25519
+        info "Generando nueva clave SSH (Ed25519)..."
+        ssh-keygen -t ed25519 -C "devops@$(hostname)-$(date +%Y%m%d)" -N "" -f ~/.ssh/id_ed25519
+        chmod 600 ~/.ssh/id_ed25519
+        chmod 644 ~/.ssh/id_ed25519.pub
+    fi
+
+    # Mostrar la clave pública
+    log "Clave pública SSH para GitHub:"
+    echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+    if [ -f ~/.ssh/id_ed25519.pub ]; then
+        cat ~/.ssh/id_ed25519.pub
+    elif [ -f ~/.ssh/id_rsa.pub ]; then
+        cat ~/.ssh/id_rsa.pub
+    fi
+    echo -e "${YELLOW}═══════════════════════════════════════════════════════════════${NC}"
+
+    log "Para agregar esta clave a GitHub:"
+    info "1. Ve a: https://github.com/settings/ssh/new"
+    info "2. Copia la clave pública mostrada arriba"
+    info "3. Pega la clave y dale un título descriptivo"
+
+    read -r -p "Presiona Enter después de haber agregado la clave a GitHub (o Ctrl+C para omitir)..." || true
+
+    # Probar conexión SSH con GitHub
     log "Probando conexión SSH con GitHub..."
-    ssh -T git@github.com || true
+    if ssh -T git@github.com 2>&1 | grep -q "successfully authenticated"; then
+        log "✓ Conexión SSH con GitHub exitosa"
+    else
+        warn "No se pudo verificar la conexión con GitHub. Verifica que agregaste la clave correctamente."
+    fi
+}
+
+#===============================================================================
+# Clonado y Configuración del Proyecto
+#===============================================================================
+
+clone_repository() {
+    local repo_url=$1
+    local target_dir=$2
+
+    log "Clonando repositorio: $repo_url"
+
+    # Crear directorio padre si no existe
+    sudo mkdir -p "$(dirname "$target_dir")"
+
+    # Clonar o actualizar repositorio
+    if [ -d "$target_dir/.git" ]; then
+        warn "El directorio ya existe. Actualizando repositorio..."
+        cd "$target_dir"
+        sudo git fetch --all
+        sudo git reset --hard origin/main || sudo git reset --hard origin/master
+        sudo git pull
+    else
+        sudo git clone "$repo_url" "$target_dir" || error "Error al clonar el repositorio"
+    fi
+
+    log "Repositorio clonado/actualizado en: $target_dir"
+}
+
+detect_project_type() {
+    local project_dir=$1
+
+    log "Detectando tipo de proyecto en: $project_dir"
+
+    if [ -f "$project_dir/docker-compose.yml" ] || [ -f "$project_dir/docker-compose.dev.yml" ]; then
+        PROJECT_TYPE="docker"
+        log "✓ Proyecto Docker detectado"
+    elif [ -f "$project_dir/composer.json" ]; then
+        PROJECT_TYPE="lamp"
+        log "✓ Proyecto LAMP/PHP detectado"
+    elif [ -f "$project_dir/package.json" ]; then
+        PROJECT_TYPE="docker"
+        log "✓ Proyecto Node.js detectado (asumiendo Docker)"
+    else
+        warn "No se pudo detectar el tipo de proyecto automáticamente"
+        read -r -p "¿Es un proyecto Docker o LAMP? (docker/lamp): " PROJECT_TYPE
+    fi
+}
+
+setup_project_docker() {
+    local project_dir=$1
+    local environment=$2
+
+    log "Configurando proyecto Docker para ambiente: $environment"
+
+    cd "$project_dir"
+
+    # Asegurarse de que Docker esté instalado
+    if ! command -v docker &> /dev/null; then
+        log "Docker no está instalado. Instalando..."
+        install_docker
+    fi
+
+    # Crear archivo .env si no existe
+    if [ ! -f .env ]; then
+        log "Creando archivo .env..."
+
+        case "$environment" in
+            prod)
+                cat > .env <<'EOF'
+# Producción
+NODE_ENV=production
+MYSQL_ROOT_PASSWORD=$(openssl rand -base64 32)
+MYSQL_DATABASE=cotizador_laminas
+MYSQL_USER=appuser
+MYSQL_PASSWORD=$(openssl rand -base64 32)
+MYSQL_PORT=3306
+APP_PORT=3000
+PHPMYADMIN_PORT=8080
+EOF
+                ;;
+            stage)
+                cat > .env <<'EOF'
+# Staging
+NODE_ENV=production
+MYSQL_ROOT_PASSWORD=StagePass123!
+MYSQL_DATABASE=cotizador_laminas_stage
+MYSQL_USER=stageuser
+MYSQL_PASSWORD=StagePass123!
+MYSQL_PORT=3306
+APP_PORT=3000
+PHPMYADMIN_PORT=8080
+EOF
+                ;;
+            dev|*)
+                cat > .env <<'EOF'
+# Desarrollo
+NODE_ENV=development
+MYSQL_ROOT_PASSWORD=DevPass123
+MYSQL_DATABASE=cotizador_laminas
+MYSQL_USER=juan
+MYSQL_PASSWORD=DevPass123
+MYSQL_PORT=3306
+APP_PORT=3000
+PHPMYADMIN_PORT=8080
+EOF
+                ;;
+        esac
+
+        sudo chmod 600 .env
+        log "Archivo .env creado"
+    else
+        info "Archivo .env ya existe, conservándolo"
+    fi
+
+    # Seleccionar el docker-compose correcto según el ambiente
+    local compose_file="docker-compose.yml"
+    case "$environment" in
+        dev)
+            if [ -f "docker-compose.dev.yml" ]; then
+                compose_file="docker-compose.dev.yml"
+            fi
+            ;;
+        stage)
+            if [ -f "docker-compose.stage.yml" ]; then
+                compose_file="docker-compose.stage.yml"
+            fi
+            ;;
+        prod)
+            if [ -f "docker-compose.prod.yml" ]; then
+                compose_file="docker-compose.prod.yml"
+            fi
+            ;;
+    esac
+
+    log "Usando archivo de compose: $compose_file"
+
+    # Construir e iniciar los contenedores
+    log "Construyendo e iniciando contenedores Docker..."
+    if docker compose version &> /dev/null; then
+        sudo docker compose -f "$compose_file" build
+        sudo docker compose -f "$compose_file" up -d
+    else
+        sudo docker-compose -f "$compose_file" build
+        sudo docker-compose -f "$compose_file" up -d
+    fi
+
+    # Configurar firewall para los puertos necesarios
+    if [ "$FIREWALL_ENABLED" = true ]; then
+        log "Configurando firewall para aplicación Docker..."
+
+        # Extraer puertos del .env
+        source .env
+        if command -v ufw &> /dev/null; then
+            sudo ufw allow "${APP_PORT:-3000}/tcp" comment 'Docker App'
+            sudo ufw allow "${PHPMYADMIN_PORT:-8080}/tcp" comment 'phpMyAdmin'
+        elif command -v firewall-cmd &> /dev/null; then
+            sudo firewall-cmd --zone=public --add-port="${APP_PORT:-3000}/tcp" --permanent
+            sudo firewall-cmd --zone=public --add-port="${PHPMYADMIN_PORT:-8080}/tcp" --permanent
+            sudo firewall-cmd --reload
+        fi
+    fi
+
+    log "✓ Proyecto Docker configurado exitosamente"
+    info "Aplicación disponible en: http://$(hostname -I | awk '{print $1}'):${APP_PORT:-3000}"
+    info "phpMyAdmin disponible en: http://$(hostname -I | awk '{print $1}'):${PHPMYADMIN_PORT:-8080}"
+}
+
+setup_project_complete() {
+    if [ -z "$PROJECT_REPO_URL" ]; then
+        warn "No se especificó URL del repositorio (PROJECT_REPO_URL)"
+        read -r -p "Ingresa la URL del repositorio (ej: git@github.com:user/repo.git): " PROJECT_REPO_URL
+        if [ -z "$PROJECT_REPO_URL" ]; then
+            warn "Omitiendo configuración del proyecto"
+            return
+        fi
+    fi
+
+    # Configurar SSH para GitHub si es necesario
+    if [[ "$PROJECT_REPO_URL" == git@github.com:* ]]; then
+        setup_github_ssh
+    fi
+
+    # Clonar repositorio
+    clone_repository "$PROJECT_REPO_URL" "$PROJECT_DIR"
+
+    # Detectar tipo de proyecto
+    detect_project_type "$PROJECT_DIR"
+
+    # Configurar según el tipo
+    case "$PROJECT_TYPE" in
+        docker)
+            setup_project_docker "$PROJECT_DIR" "$PROJECT_ENVIRONMENT"
+            ;;
+        lamp)
+            setup_project_local "$PROJECT_DIR"
+            ;;
+        *)
+            warn "Tipo de proyecto desconocido: $PROJECT_TYPE"
+            ;;
+    esac
 }
 
 #===============================================================================
@@ -955,13 +1221,15 @@ EOF
 
     echo "Selecciona el tipo de instalación:"
     echo ""
-    echo "  1) Instalación completa con hardening"
+    echo "  1) Instalación completa con hardening + proyecto"
     echo "  2) Solo hardening de seguridad"
     echo "  3) Instalar LAMP local"
     echo "  4) Instalar Docker"
-    echo "  5) Configurar firewall"
-    echo "  6) Configurar SSH hardened"
-    echo "  7) Salir"
+    echo "  5) Configurar proyecto desde repositorio"
+    echo "  6) Configurar firewall"
+    echo "  7) Configurar SSH hardened"
+    echo "  8) Configurar SSH para GitHub"
+    echo "  9) Salir"
     echo ""
     read -r -p "Opción: " INSTALL_OPTION
 }
@@ -980,17 +1248,19 @@ main() {
 
     case $INSTALL_OPTION in
         1)
-            log "Instalación completa con hardening..."
+            log "Instalación completa con hardening + proyecto..."
             update_system
             install_basic_tools
             apply_kernel_hardening
             configure_system_limits
+            setup_ssh_keys
             setup_ssh_hardened
             install_fail2ban
             configure_firewall
             configure_network
             configure_auto_updates
             configure_audit_logging
+            setup_project_complete
             security_report
             ;;
         2)
@@ -1017,14 +1287,24 @@ main() {
             install_docker
             ;;
         5)
+            log "Configurando proyecto desde repositorio..."
+            setup_ssh_keys
+            setup_project_complete
+            ;;
+        6)
             log "Configurando firewall..."
             configure_firewall
             ;;
-        6)
+        7)
             log "Configurando SSH hardened..."
             setup_ssh_hardened
             ;;
-        7)
+        8)
+            log "Configurando SSH para GitHub..."
+            setup_ssh_keys
+            setup_github_ssh
+            ;;
+        9)
             info "Saliendo..."
             exit 0
             ;;
